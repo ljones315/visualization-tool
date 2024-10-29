@@ -3,8 +3,11 @@ import * as algos from './algo';
 // After adding the export in algos/index.js, add new algorithms in the following format:
 // AlgorithmName: ['Menu Display Name', algos.ClassName, hasPseudoCode, 'Verbose Display Name (optional)']
 export const algoMap = {
+	NonLinearProbing: ['Non-Linear Probing', algos.NonLinearProbing],
+	LVA: ['LVA', algos.LVA],
+	BogoSort: ['Bogo Sort', algos.BogoSort],
 	ArrayList: ['ArrayList', algos.ArrayList, true],
-	LinkedList: ['Singly LinkedList', algos.LinkedList],
+	LinkedList: ['Singly LinkedList', algos.LinkedList, true],
 	DoublyLinkedList: ['Doubly LinkedList', algos.DoublyLinkedList, true],
 	CircularlyLinkedList: ['Circularly LinkedList', algos.CircularlyLinkedList, true],
 	StackArray: ['Stack (Array)', algos.StackArray, true],
@@ -25,8 +28,8 @@ export const algoMap = {
 	CocktailSort: ['Cocktail Shaker Sort', algos.CocktailSort, true],
 	InsertionSort: ['Insertion Sort', algos.InsertionSort, true],
 	SelectionSort: ['Selection Sort', algos.SelectionSort, true],
-	QuickSort: ['QuickSort', algos.QuickSort, true],
-	QuickSelect: ['Quick / kᵗʰ Select', algos.QuickSelect, true],
+	Quicksort: ['Quicksort', algos.Quicksort, true],
+	Quickselect: ['Quick / kᵗʰ Select', algos.Quickselect, true],
 	MergeSort: ['MergeSort', algos.MergeSort, true],
 	LSDRadix: ['LSD Radix Sort', algos.LSDRadix, true],
 	HeapSort: ['HeapSort', algos.HeapSort, true],
@@ -60,19 +63,22 @@ export const algoList = [
 	'BST',
 	'Heap',
 	'AVL',
+	// 'LVA',
 	'BTree',
 	'SplayTree',
 	'SkipList',
 	'HashMaps',
 	'ClosedHash',
 	'OpenHash',
-	'Sorting and QuickSelect',
+	// 'NonLinearProbing',
+	'Sorting and Quickselect',
+	// 'BogoSort',
 	'BubbleSort',
 	'CocktailSort',
 	'InsertionSort',
 	'SelectionSort',
-	'QuickSort',
-	'QuickSelect',
+	'Quicksort',
+	'Quickselect',
 	'MergeSort',
 	'LSDRadix',
 	'HeapSort',
@@ -90,4 +96,155 @@ export const algoList = [
 	'Dynamic Programming',
 	'LCS',
 	'Floyd',
+];
+
+export const algoFilter = [
+	{
+		id: 'ArrayList',
+		category: 'Lists',
+	},
+	{
+		id: 'LinkedList',
+		category: 'Lists',
+	},
+	{
+		id: 'DoublyLinkedList',
+		category: 'Lists',
+	},
+	{
+		id: 'CircularlyLinkedList',
+		category: 'Lists',
+	},
+	{
+		id: 'StackArray',
+		category: 'Linear Data Structures',
+	},
+	{
+		id: 'StackLL',
+		category: 'Linear Data Structures',
+	},
+	{
+		id: 'QueueArray',
+		category: 'Linear Data Structures',
+	},
+	{
+		id: 'QueueLL',
+		category: 'Linear Data Structures',
+	},
+	{
+		id: 'DequeArray',
+		category: 'Linear Data Structures',
+	},
+	{
+		id: 'DequeLL',
+		category: 'Linear Data Structures',
+	},
+	{
+		id: 'BST',
+		category: 'Trees',
+	},
+	{
+		id: 'Heap',
+		category: 'Trees',
+	},
+	{
+		id: 'AVL',
+		category: 'Trees',
+	},
+	{
+		id: 'BTree',
+		category: 'Trees',
+	},
+	{
+		id: 'SplayTree',
+		category: 'Trees',
+	},
+	{
+		id: 'SkipList',
+		category: 'SkipList',
+	},
+	{
+		id: 'OpenHash',
+		category: 'Hashmaps',
+	},
+	{
+		id: 'ClosedHash',
+		category: 'Hashmaps',
+	},
+	{
+		id: 'BubbleSort',
+		category: 'Sorting and Quick Select',
+	},
+	{
+		id: 'CocktailSort',
+		category: 'Sorting and Quick Select',
+	},
+	{
+		id: 'InsertionSort',
+		category: 'Sorting and Quick Select',
+	},
+	{
+		id: 'QuickSort',
+		category: 'Sorting and Quick Select',
+	},
+	{
+		id: 'QuickSelect',
+		category: 'Sorting and Quick Select',
+	},
+	{
+		id: 'MergeSort',
+		category: 'Sorting and Quick Select',
+	},
+	{
+		id: 'LSDRadix',
+		category: 'Sorting and Quick Select',
+	},
+	{
+		id: 'HeapSort',
+		category: 'Sorting and Quick Select',
+	},
+	{
+		id: 'BruteForce',
+		category: 'Pattern Matching',
+	},
+	{
+		id: 'BoyerMoore',
+		category: 'Pattern Matching',
+	},
+	{
+		id: 'KMP',
+		category: 'Pattern Matching',
+	},
+	{
+		id: 'RabinKarp',
+		category: 'Pattern Matching',
+	},
+	{
+		id: 'BFS',
+		category: 'Graph Algoritms',
+	},
+	{
+		id: 'DFS',
+		category: 'Graph Algoritms',
+	},
+	{
+		id: 'Dijkstra',
+		category: 'Graph Algoritms',
+	},
+	{
+		id: 'Prim',
+		category: 'Graph Algoritms',
+	},
+	{
+		id: 'Krusal',
+		category: 'Graph Algoritms',
+	},
+	{
+		id: 'LCS',
+		category: 'Dynamic Programming',
+	},
+	{
+		id: 'Floyd',
+		category: 'Dynamic Programming',
+	},
 ];

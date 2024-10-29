@@ -1,4 +1,5 @@
 import {
+	BsEnvelopeFill,
 	BsFillHouseFill,
 	BsFillSunFill,
 	BsGithub,
@@ -6,6 +7,7 @@ import {
 	BsMoonFill,
 } from 'react-icons/bs';
 import Blob from './Blob';
+import Draggable from 'react-draggable';
 import { IconContext } from 'react-icons';
 import { Link } from 'react-router-dom';
 import React from 'react';
@@ -34,15 +36,17 @@ class Header extends React.Component {
 						<h1>CS 1332 Data Structures and Algorithms Visualization Tool</h1>
 					</div>
 					<div className="gimmicks">
-						<div id="blob-container">
-							<Blob />
-						</div>
+						<Draggable>
+							<div id="blob-container">
+								<Blob />
+							</div>
+						</Draggable>
 						<div id="theme">
 							{theme === 'light' ? (
 								<BsFillSunFill
 									size={31}
 									onClick={toggleTheme}
-									color="#f9c333"
+									color="#e7c114"
 									className="rotate-effect"
 								/>
 							) : (
@@ -71,9 +75,23 @@ class Header extends React.Component {
 							</Link>
 						</li>
 						<li>
-							<a href="https://github.com/RodrigoDLPontes/visualization-tool">
+							<a
+								href="https://github.com/RodrigoDLPontes/visualization-tool"
+								target="_blank"
+								rel="noreferrer"
+							>
 								<BsGithub size={20} />
 								&nbsp;&nbsp;Source Code
+							</a>
+						</li>
+						<li>
+							<a
+								href="https://forms.gle/j9iMhFi8drjf2PU86"
+								target="_blank"
+								rel="noreferrer"
+							>
+								<BsEnvelopeFill size={20} />
+								&nbsp;&nbsp;Feedback
 							</a>
 						</li>
 					</ul>

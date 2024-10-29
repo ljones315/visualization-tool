@@ -27,11 +27,13 @@
 import Algorithm, {
 	addControlToAlgorithmBar,
 	addDivisorToAlgorithmBar,
+	addDropDownGroupToAlgorithmBar,
 	addGroupToAlgorithmBar,
 	addLabelToAlgorithmBar,
 	addRadioButtonGroupToAlgorithmBar,
 } from './Algorithm.js';
 import { act } from '../anim/AnimationMain';
+import pseudocodeText from '../pseudocode.json';
 
 const MAX_ARRAY_SIZE = 18;
 
@@ -101,15 +103,22 @@ export default class SelectionSort extends Algorithm {
 
 		addDivisorToAlgorithmBar();
 
-		const verticalGroup2 = addGroupToAlgorithmBar(false);
-
-		// Random data button
-		this.randomButton = addControlToAlgorithmBar('Button', 'Random', verticalGroup2);
-		this.randomButton.onclick = this.randomCallback.bind(this);
-		this.controls.push(this.randomButton);
+		// Examples dropdown
+		this.exampleDropdown = addDropDownGroupToAlgorithmBar(
+			[
+				['', 'Select Example'],
+				['1,2,3,4,5,6,7,8,9', 'Sorted'],
+				['9,8,7,6,5,4,3,2,1', 'Reverse Sorted'],
+				['2,3,4,5,6,7,8,9,1', 'Almost Sorted'],
+				['Random', 'Random'],
+			],
+			'Example',
+		);
+		this.exampleDropdown.onclick = this.exampleCallback.bind(this);
+		this.controls.push(this.exampleDropdown);
 
 		// Clear button
-		this.clearButton = addControlToAlgorithmBar('Button', 'Clear', verticalGroup2);
+		this.clearButton = addControlToAlgorithmBar('Button', 'Clear');
 		this.clearButton.onclick = this.clearCallback.bind(this);
 		this.controls.push(this.clearButton);
 
@@ -162,22 +171,14 @@ export default class SelectionSort extends Algorithm {
 			COMP_COUNT_Y,
 		);
 
-		this.code = [
-			['procedure SelectionSort(array):'],
-			['  length ← length of array'],
-			['  for i ← length - 1, 0 do'],
-			['    max ← i'],
-			['    for j ← i - 1, 0 do'],
-			['      if array[j] > array[max]'],
-			['        max ← j'],
-			['      end if'],
-			['    end for'],
-			['    swap array[max], array[i]'],
-			['  end for'],
-			['end procedure'],
-		];
-
-		this.codeID = this.addCodeToCanvasBase(this.code, CODE_START_X, CODE_START_Y);
+		this.pseudocode = pseudocodeText.SelectionSort;
+		this.codeID = this.addCodeToCanvasBaseAll(
+			this.pseudocode,
+			'find',
+			CODE_START_X,
+			CODE_START_Y,
+		);
+		this.resetIndex = this.nextIndex;
 
 		this.animationManager.startNewAnimation(this.commands);
 		this.animationManager.skipForward();
@@ -185,56 +186,57 @@ export default class SelectionSort extends Algorithm {
 	}
 
 	reset() {
-		this.nextIndex = 0;
+		this.nextIndex = this.resetIndex;
 		this.arrayData = [];
 		this.arrayID = [];
 		this.displayData = [];
-		this.removeCode(this.codeID);
-		this.iPointerID = this.nextIndex++;
-		this.jPointerID = this.nextIndex++;
-		this.comparisonCountID = this.nextIndex++;
-		this.infoLabelID = this.nextIndex++;
 		this.compCount = 0;
-		this.swapCountID = this.nextIndex++;
 		this.swapCount = 0;
-		this.codeID = this.addCodeToCanvasBase(this.code, CODE_START_X, CODE_START_Y);
-		if (this.isMin) {
-			this.cmd(act.setText, this.codeID[2][0], '  for i ← 0, length do');
-			this.cmd(act.setText, this.codeID[3][0], '    min ← i');
-			this.cmd(act.setText, this.codeID[4][0], '    for j ← i + 1, length do');
-			this.cmd(act.setText, this.codeID[5][0], '      if array[j] < array[min]');
-			this.cmd(act.setText, this.codeID[5][0], '        min ← j');
-			this.cmd(act.setText, this.codeID[9][0], '    swap array[min], array[i]');
-		}
 	}
 
-	randomCallback() {
-		//Generate between 5 and 15 random values
-		const RANDOM_ARRAY_SIZE = Math.floor(Math.random() * 9) + 5;
-		const MIN_DATA_VALUE = 1;
-		const MAX_DATA_VALUE = 14;
-		let values = '';
-		for (let i = 0; i < RANDOM_ARRAY_SIZE; i++) {
-			values += (
-				Math.floor(Math.random() * (MAX_DATA_VALUE - MIN_DATA_VALUE)) + MIN_DATA_VALUE
-			).toString();
-			if (i < RANDOM_ARRAY_SIZE - 1) {
-				values += ',';
-			}
+	exampleCallback() {
+		const selection = this.exampleDropdown.value;
+		if (!selection) {
+			return;
 		}
 
+		let values = '';
+		if (selection === 'Random') {
+			//Generate between 5 and 15 random values
+			const RANDOM_ARRAY_SIZE = Math.floor(Math.random() * 9) + 5;
+			const MIN_DATA_VALUE = 1;
+			const MAX_DATA_VALUE = 14;
+			for (let i = 0; i < RANDOM_ARRAY_SIZE; i++) {
+				values += (
+					Math.floor(Math.random() * (MAX_DATA_VALUE - MIN_DATA_VALUE)) + MIN_DATA_VALUE
+				).toString();
+				if (i < RANDOM_ARRAY_SIZE - 1) {
+					values += ',';
+				}
+			}
+		} else {
+			values = selection;
+		}
+		this.exampleDropdown.value = '';
 		this.listField.value = values;
 	}
 
 	minCallback() {
 		if (!this.isMin) {
 			this.implementAction(this.clear.bind(this));
-			this.cmd(act.setText, this.codeID[2][0], '  for i ← 0, length do');
-			this.cmd(act.setText, this.codeID[3][0], '    min ← i');
-			this.cmd(act.setText, this.codeID[4][0], '    for j ← i + 1, length do');
-			this.cmd(act.setText, this.codeID[5][0], '      if array[j] < array[min]');
-			this.cmd(act.setText, this.codeID[6][0], '        min ← j');
-			this.cmd(act.setText, this.codeID[9][0], '    swap array[min], array[i]');
+			this.cmd(act.setText, this.codeID.code[2][0], '  for i ← 0, length:');
+			this.cmd(act.setText, this.codeID.code[3][0], '    min ← i');
+			this.cmd(act.setText, this.codeID.code[4][0], '    for j ← i + 1, length:');
+			this.cmd(act.setText, this.codeID.code[5][0], '      if array[j] < array[min]:');
+			this.cmd(act.setText, this.codeID.code[6][0], '        min ← j');
+			this.cmd(act.setText, this.codeID.code[9][0], '    swap array[min], array[i]');
+
+			this.cmd(act.setText, this.codeID.english[2][0], '  for (i from start to end):');
+			this.cmd(act.setText, this.codeID.english[3][0], '    initialize min value');
+			this.cmd(act.setText, this.codeID.english[4][0], '    for (j from i to end):');
+			this.cmd(act.setText, this.codeID.english[5][0], '      if (array[j] < min value):');
+			this.cmd(act.setText, this.codeID.english[6][0], '        min value is array[j]');
+			this.cmd(act.setText, this.codeID.english[9][0], '    swap min value with array[i]');
 			this.isMin = true;
 		}
 	}
@@ -242,12 +244,19 @@ export default class SelectionSort extends Algorithm {
 	maxCallback() {
 		if (this.isMin) {
 			this.implementAction(this.clear.bind(this));
-			this.cmd(act.setText, this.codeID[2][0], '  for i ← length - 1, 0 do');
-			this.cmd(act.setText, this.codeID[3][0], '    max ← i');
-			this.cmd(act.setText, this.codeID[4][0], '    for j ← i - 1, 0 do');
-			this.cmd(act.setText, this.codeID[5][0], '      if array[j] > array[max]');
-			this.cmd(act.setText, this.codeID[6][0], '        max ← j');
-			this.cmd(act.setText, this.codeID[9][0], '    swap array[max], array[i]');
+			this.cmd(act.setText, this.codeID.code[2][0], '  for i ← length - 1, 0:');
+			this.cmd(act.setText, this.codeID.code[3][0], '    max ← i');
+			this.cmd(act.setText, this.codeID.code[4][0], '    for j ← i - 1, 0:');
+			this.cmd(act.setText, this.codeID.code[5][0], '      if array[j] > array[max]:');
+			this.cmd(act.setText, this.codeID.code[6][0], '        max ← j');
+			this.cmd(act.setText, this.codeID.code[9][0], '    swap array[max], array[i]');
+
+			this.cmd(act.setText, this.codeID.english[2][0], '  for (i from end to start):');
+			this.cmd(act.setText, this.codeID.english[3][0], '    initialize max value');
+			this.cmd(act.setText, this.codeID.english[4][0], '    for (j from start to i):');
+			this.cmd(act.setText, this.codeID.english[5][0], '      if (array[j] > max value):');
+			this.cmd(act.setText, this.codeID.english[6][0], '        max value is array[j]');
+			this.cmd(act.setText, this.codeID.english[9][0], '    swap max value with array[i]');
 			this.isMin = false;
 		}
 	}
@@ -307,7 +316,7 @@ export default class SelectionSort extends Algorithm {
 			return this.commands;
 		}
 
-		this.highlight(0, 0);
+		this.highlight(1, 0, this.codeID);
 
 		this.arrayID = [];
 		this.arrayData = list
@@ -376,13 +385,12 @@ export default class SelectionSort extends Algorithm {
 			ARRAY_START_Y,
 		);
 		this.cmd(act.step);
-		this.unhighlight(0, 0);
+		this.unhighlight(1, 0, this.codeID);
 		this.cmd(act.setHighlight, this.jPointerID, 1);
-		this.highlight(2, 0);
+		this.highlight(2, 0, this.codeID);
 		this.cmd(act.step);
-		this.unhighlight(2, 0);
 		for (let i = 0; i < this.arrayData.length - 1; i++) {
-			this.highlight(3, 0);
+			this.highlight(3, 0, this.codeID);
 			let k = i;
 			if (!this.isMin) {
 				k = this.arrayData.length - 1 - i;
@@ -391,11 +399,10 @@ export default class SelectionSort extends Algorithm {
 			let toSwap = k;
 			this.cmd(act.setBackgroundColor, this.arrayID[toSwap], '#FFFF00');
 			this.cmd(act.step);
-			this.unhighlight(3, 0);
-			this.highlight(4, 0);
+			this.unhighlight(3, 0, this.codeID);
+			this.highlight(4, 0, this.codeID);
 			this.cmd(act.step);
 			for (let j = i + 1; j < this.arrayData.length; j++) {
-				this.unhighlight(4, 0);
 				let w = j;
 				if (!this.isMin) {
 					w = this.arrayData.length - 1 - j;
@@ -404,21 +411,23 @@ export default class SelectionSort extends Algorithm {
 				this.movePointers(toSwap, w);
 				if (this.compare(this.arrayData[w], this.arrayData[toSwap])) {
 					this.cmd(act.setBackgroundColor, this.arrayID[toSwap], '#FFFFFF');
-					this.highlight(6, 0);
+					this.highlight(6, 0, this.codeID);
 					this.cmd(act.step);
 					toSwap = w;
 					this.movePointers(toSwap, w);
 					this.cmd(act.setBackgroundColor, this.arrayID[toSwap], '#FFFF00');
 					this.cmd(act.step);
-					this.unhighlight(6, 0);
+					this.unhighlight(6, 0, this.codeID);
 				}
 			}
+			this.unhighlight(4, 0, this.codeID);
 			this.swap(k, toSwap);
 			this.cmd(act.setBackgroundColor, this.arrayID[toSwap], '#FFFFFF');
 			this.cmd(act.step);
 			this.cmd(act.setBackgroundColor, this.arrayID[k], '#2ECC71');
 			this.cmd(act.step);
 		}
+		this.unhighlight(2, 0, this.codeID);
 
 		this.cmd(act.delete, this.iPointerID);
 		this.cmd(act.delete, this.jPointerID);
@@ -434,10 +443,10 @@ export default class SelectionSort extends Algorithm {
 	}
 
 	compare(i, j) {
-		this.highlight(5, 0);
+		this.highlight(5, 0, this.codeID);
 		this.cmd(act.setText, this.comparisonCountID, 'Comparison Count: ' + ++this.compCount);
 		this.cmd(act.step);
-		this.unhighlight(5, 0);
+		this.unhighlight(5, 0, this.codeID);
 		if (this.isMin) {
 			return i < j;
 		} else {
@@ -456,7 +465,7 @@ export default class SelectionSort extends Algorithm {
 	}
 
 	swap(i, j) {
-		this.highlight(9, 0);
+		this.highlight(9, 0, this.codeID);
 		const iLabelID = this.nextIndex++;
 		const iXPos = i * ARRAY_ELEM_WIDTH + ARRAY_START_X;
 		const iYPos = ARRAY_START_Y;
@@ -483,7 +492,7 @@ export default class SelectionSort extends Algorithm {
 		temp = this.displayData[i];
 		this.displayData[i] = this.displayData[j];
 		this.displayData[j] = temp;
-		this.unhighlight(9, 0);
+		this.unhighlight(9, 0, this.codeID);
 	}
 
 	disableUI() {

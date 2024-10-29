@@ -27,9 +27,11 @@
 import Algorithm, {
 	addControlToAlgorithmBar,
 	addDivisorToAlgorithmBar,
+	addDropDownGroupToAlgorithmBar,
 	addLabelToAlgorithmBar,
 } from './Algorithm.js';
 import { act } from '../anim/AnimationMain';
+import pseudocodeText from '../pseudocode.json';
 
 const INFO_MSG_X = 25;
 const INFO_MSG_Y = 15;
@@ -95,10 +97,24 @@ export default class KMP extends Algorithm {
 
 		addDivisorToAlgorithmBar();
 
-		// Random data button
-		this.randomButton = addControlToAlgorithmBar('Button', 'Random');
-		this.randomButton.onclick = this.randomCallback.bind(this);
-		this.controls.push(this.randomButton);
+		// Examples dropdown
+		this.exampleDropdown = addDropDownGroupToAlgorithmBar(
+			[
+				['', 'Select Example'],
+				['Random', 'Random'],
+				['aaaa in aaaaaaaaaaaaa', 'aaaa in aaaaaaaaaaaaa'],
+				['aaab in aaaaaaaaaaaaa', 'aaab in aaaaaaaaaaaaa'],
+				['baaa in aaaaaaaaaaaaa', 'baaa in aaaaaaaaaaaaa'],
+				['aaaa in aaabaaabaaaba', 'aaaa in aaabaaabaaaba'],
+				['aaab in aaabaaabaaaba', 'aaab in aaabaaabaaaba'],
+				['baaa in aaabaaabaaaba', 'baaa in aaabaaabaaaba'],
+				['abab in abacabacababa', 'abab in abacabacababa'],
+				['lack in sphinxofblackquartz', 'lack in sphinxofblackquartz'],
+			],
+			'Example',
+		);
+		this.exampleDropdown.onclick = this.exampleCallback.bind(this);
+		this.controls.push(this.exampleDropdown);
 
 		addDivisorToAlgorithmBar();
 
@@ -126,44 +142,7 @@ export default class KMP extends Algorithm {
 		this.infoLabelID = this.nextIndex++;
 		this.cmd(act.createLabel, this.infoLabelID, '', INFO_MSG_X, INFO_MSG_Y, 0);
 
-		this.failureTableCode = [
-			['procedure KMPFailureTable(pattern):'],
-			['  m ← length of pattern'],
-			['  failureTable ← array of length m'],
-			['  i ← 0, j ← 1'],
-			['  failureTable[0] ← 0'],
-			['  while j < m'],
-			['    if pattern[i] = pattern[j]'],
-			['      failureTable[j] ← i + 1'],
-			['      i ← i + 1, j ← j + 1'],
-			['    else'],
-			['      if i = 0'],
-			['        failureTable[j] ← 0'],
-			['        j ← j + 1'],
-			['      else'],
-			['        i ← failureTable[i - 1]'],
-			['  return failureTable'],
-			['end procedure'],
-		];
-
-		this.KMPCode = [
-			['procedure KMP(text, pattern):'],
-			['  initialize failureTable'],
-			['  m ← length of pattern, n ← length of text'],
-			['  i ← 0, j ← 0'],
-			['  while i <= n - m'],
-			['    while j < m and text[i + j] = pattern[j]'],
-			['      j -> j + 1'],
-			['    if j = 0'],
-			['      i ← i + 1'],
-			['    else'],
-			['      if j = m'],
-			['        match found at i'],
-			['      shift ← failureTable[j - 1]'],
-			['      i ← i + j - shift'],
-			['      j ← shift'],
-			['end procedure'],
-		];
+		this.pseudocode = pseudocodeText.KMP;
 
 		this.animationManager.startNewAnimation(this.commands);
 		this.animationManager.skipForward();
@@ -191,35 +170,49 @@ export default class KMP extends Algorithm {
 		this.implementAction(this.find.bind(this), text, pattern);
 	}
 
-	randomCallback() {
-		// The array indices correspond to each other
-		const textValues = [
-			'THISISATESTTEXT',
-			'ABABABABABABABABABABA',
-			'GGACTGA',
-			'BBBBAABBBAB',
-			'Machine Learning',
-			'Sphinxofblackquartz',
-			'BBBBBBBBBBBBBBBBBBBBA',
-			'AAAAABAAABA',
-			'AABCCAADDEE',
-		];
-		const patternValues = [
-			'TEST',
-			'ABABAB',
-			'ACT',
-			'BAB',
-			'in',
-			'quartz',
-			'BBBBBA',
-			'AAAA',
-			'FAA',
-		];
+	exampleCallback() {
+		const selection = this.exampleDropdown.value;
+		if (!selection) {
+			return;
+		}
 
-		const randomIndex = Math.floor(Math.random() * textValues.length);
+		let textValue;
+		let patternValue;
 
-		this.textField.value = textValues[randomIndex];
-		this.patternField.value = patternValues[randomIndex];
+		if (selection === 'Random') {
+			patternValue = this.generateRandomString(3, 'abc');
+			textValue = this.generateRandomString(15, 'abc', patternValue);
+		} else {
+			const values = selection.split(' in ');
+			textValue = values[1];
+			patternValue = values[0];
+		}
+
+		this.textField.value = textValue;
+		this.patternField.value = patternValue;
+		this.exampleDropdown.value = '';
+	}
+
+	// Create a random text or pattern string provided length, character set, and optionally force-include given string
+	generateRandomString(length, characters, mustInclude) {
+		let result = '';
+		if (mustInclude) {
+			const randomPosition = Math.floor(Math.random() * (length - mustInclude.length + 1));
+			for (let i = 0; i < length; i++) {
+				if (i >= randomPosition && i < randomPosition + mustInclude.length) {
+					result += mustInclude[i - randomPosition];
+				} else {
+					const randomIndex = Math.floor(Math.random() * characters.length);
+					result += characters[randomIndex];
+				}
+			}
+		} else {
+			for (let i = 0; i < length; i++) {
+				const randomIndex = Math.floor(Math.random() * characters.length);
+				result += characters[randomIndex];
+			}
+		}
+		return result;
 	}
 
 	buildFailureTableCallback() {
@@ -317,8 +310,9 @@ export default class KMP extends Algorithm {
 		this.removeCode(this.codeID);
 		const tableStartX = ARRAY_START_X + text.length * this.cellSize + 110;
 
-		this.codeID = this.addCodeToCanvasBase(
-			this.KMPCode,
+		this.codeID = this.addCodeToCanvasBaseAll(
+			this.pseudocode,
+			'find',
 			ARRAY_START_X + text.length * this.cellSize + 10,
 			CODE_Y,
 		);
@@ -375,7 +369,14 @@ export default class KMP extends Algorithm {
 		let i = 0;
 		let j = 0;
 		let row = 0;
-		this.highlight(4, 0);
+		this.highlight(1, 0, this.codeID);
+		this.highlight(2, 0, this.codeID);
+		this.highlight(3, 0, this.codeID);
+		this.cmd(act.step);
+		this.unhighlight(1, 0, this.codeID);
+		this.unhighlight(2, 0, this.codeID);
+		this.unhighlight(3, 0, this.codeID);
+		this.highlight(4, 0, this.codeID);
 		while (i <= text.length - pattern.length) {
 			for (let k = i; k < i + pattern.length; k++) {
 				this.cmd(
@@ -390,7 +391,7 @@ export default class KMP extends Algorithm {
 				}
 			}
 			this.cmd(act.step);
-			this.highlight(5, 0);
+			this.highlight(5, 0, this.codeID);
 			this.cmd(act.setAlpha, fjPointerID, 0);
 			this.cmd(act.setAlpha, f0PointerID, 0);
 			this.cmd(act.setAlpha, f1PointerID, 0);
@@ -402,9 +403,9 @@ export default class KMP extends Algorithm {
 				);
 				this.cmd(act.setBackgroundColor, this.comparisonMatrixID[row][i + j], '#2ECC71');
 				j++;
-				this.highlight(6, 0);
+				this.highlight(6, 0, this.codeID);
 				this.cmd(act.step);
-				this.unhighlight(6, 0);
+				this.unhighlight(6, 0, this.codeID);
 				if (j < pattern.length) {
 					xpos = (i + j) * this.cellSize + ARRAY_START_X;
 					this.cmd(act.move, iPointerID, xpos, ARRAY_START_Y);
@@ -413,7 +414,7 @@ export default class KMP extends Algorithm {
 					this.cmd(act.step);
 				}
 			}
-			this.unhighlight(5, 0);
+			this.unhighlight(5, 0, this.codeID);
 			if (j < pattern.length) {
 				this.cmd(
 					act.setText,
@@ -421,23 +422,23 @@ export default class KMP extends Algorithm {
 					'Comparison Count: ' + ++this.compCount,
 				);
 			}
-			this.highlight(7, 0);
+			this.highlight(8, 0, this.codeID);
 			this.cmd(act.step);
 			if (j === 0) {
-				this.unhighlight(7, 0);
-				this.highlight(8, 0);
+				this.unhighlight(8, 0, this.codeID);
+				this.highlight(9, 0, this.codeID);
 				this.cmd(act.step);
-				this.unhighlight(8, 0);
+				this.unhighlight(9, 0, this.codeID);
 				this.cmd(act.setBackgroundColor, this.comparisonMatrixID[row][i], '#E74C3C');
 				i++;
 			} else {
-				this.unhighlight(7, 0);
-				this.highlight(9, 0);
+				this.unhighlight(8, 0, this.codeID);
+				this.highlight(10, 0, this.codeID);
 				this.cmd(act.step);
-				this.unhighlight(9, 0);
-				this.highlight(10, 0);
+				this.unhighlight(10, 0, this.codeID);
+				this.highlight(11, 0, this.codeID);
 				this.cmd(act.step);
-				this.unhighlight(10, 0);
+				this.unhighlight(11, 0, this.codeID);
 				if (j !== pattern.length) {
 					this.cmd(
 						act.setBackgroundColor,
@@ -445,11 +446,11 @@ export default class KMP extends Algorithm {
 						'#E74C3C',
 					);
 				} else {
-					this.highlight(11, 0);
+					this.highlight(12, 0, this.codeID);
 					this.cmd(act.step);
-					this.unhighlight(11, 0);
+					this.unhighlight(12, 0, this.codeID);
 				}
-				this.highlight(12, 0);
+				this.highlight(14, 0, this.codeID);
 				const nextAlignment = failureTable[j - 1];
 				this.cmd(
 					act.setPosition,
@@ -473,9 +474,9 @@ export default class KMP extends Algorithm {
 				this.cmd(act.setAlpha, f0PointerID, 1);
 				this.cmd(act.setAlpha, f1PointerID, 1);
 				this.cmd(act.step);
-				this.unhighlight(12, 0);
-				this.highlight(13, 0);
-				this.highlight(14, 0);
+				this.unhighlight(14, 0, this.codeID);
+				this.highlight(15, 0, this.codeID);
+				this.highlight(16, 0, this.codeID);
 				i += j - nextAlignment;
 				j = nextAlignment;
 			}
@@ -487,10 +488,10 @@ export default class KMP extends Algorithm {
 				this.cmd(act.move, jPointerID, xpos, ypos);
 			}
 			this.cmd(act.step);
-			this.unhighlight(13, 0);
-			this.unhighlight(14, 0);
+			this.unhighlight(15, 0, this.codeID);
+			this.unhighlight(16, 0, this.codeID);
 		}
-		this.unhighlight(4, 0);
+		this.unhighlight(4, 0, this.codeID);
 
 		this.cmd(act.delete, iPointerID);
 		this.cmd(act.delete, jPointerID);
@@ -565,7 +566,7 @@ export default class KMP extends Algorithm {
 			0,
 		);
 
-		this.codeID = this.addCodeToCanvasBase(this.failureTableCode, labelX, CODE_Y);
+		this.codeID = this.addCodeToCanvasBaseAll(this.pseudocode, 'failureTable', labelX, CODE_Y);
 
 		this.cmd(act.move, this.comparisonCountID, labelX, COMP_COUNT_Y);
 		this.cmd(act.setText, this.comparisonCountID, 'Comparison Count: ' + this.compCount);
@@ -620,25 +621,25 @@ export default class KMP extends Algorithm {
 			this.cellSize / 2,
 		);
 		this.cmd(act.setText, this.failureTableValueID[0], 0);
-		this.highlight(3, 0);
-		this.highlight(4, 0);
+		this.highlight(3, 0, this.codeID);
+		this.highlight(4, 0, this.codeID);
 		this.cmd(act.step);
-		this.unhighlight(3, 0);
-		this.unhighlight(4, 0);
+		this.unhighlight(3, 0, this.codeID);
+		this.unhighlight(4, 0, this.codeID);
 
 		const failureTable = [];
 		failureTable[0] = 0;
 		let i = 0;
 		let j = 1;
-		this.highlight(5, 0);
+		this.highlight(5, 0, this.codeID);
 		while (j < pattern.length) {
 			this.cmd(act.setText, this.comparisonCountID, 'Comparison Count: ' + ++this.compCount);
-			this.highlight(6, 0);
+			this.highlight(6, 0, this.codeID);
 			this.cmd(act.step);
-			this.unhighlight(6, 0);
+			this.unhighlight(6, 0, this.codeID);
 			if (pattern.charAt(i) === pattern.charAt(j)) {
-				this.highlight(7, 0);
-				this.highlight(8, 0);
+				this.highlight(7, 0, this.codeID);
+				this.highlight(8, 0, this.codeID);
 				i++;
 				failureTable[j] = i;
 				this.cmd(act.setText, this.failureTableValueID[j], i);
@@ -658,18 +659,18 @@ export default class KMP extends Algorithm {
 					);
 				}
 				this.cmd(act.step);
-				this.unhighlight(7, 0);
-				this.unhighlight(8, 0);
+				this.unhighlight(7, 0, this.codeID);
+				this.unhighlight(8, 0, this.codeID);
 			} else {
-				this.highlight(9, 0);
+				this.highlight(9, 0, this.codeID);
 				this.cmd(act.step);
-				this.unhighlight(9, 0);
-				this.highlight(10, 0);
+				this.unhighlight(9, 0, this.codeID);
+				this.highlight(10, 0, this.codeID);
 				this.cmd(act.step);
-				this.unhighlight(10, 0);
+				this.unhighlight(10, 0, this.codeID);
 				if (i === 0) {
-					this.highlight(11, 0);
-					this.highlight(12, 0);
+					this.highlight(11, 0, this.codeID);
+					this.highlight(12, 0, this.codeID);
 					failureTable[j] = i;
 					this.cmd(act.setText, this.failureTableValueID[j], i);
 					j++;
@@ -682,13 +683,13 @@ export default class KMP extends Algorithm {
 						);
 					}
 					this.cmd(act.step);
-					this.unhighlight(11, 0);
-					this.unhighlight(12, 0);
+					this.unhighlight(11, 0, this.codeID);
+					this.unhighlight(12, 0, this.codeID);
 				} else {
-					this.highlight(13, 0);
+					this.highlight(13, 0, this.codeID);
 					this.cmd(act.step);
-					this.unhighlight(13, 0);
-					this.highlight(14, 0);
+					this.unhighlight(13, 0, this.codeID);
+					this.highlight(14, 0, this.codeID);
 					i = failureTable[i - 1];
 					this.cmd(
 						act.move,
@@ -697,14 +698,14 @@ export default class KMP extends Algorithm {
 						FAILURE_TABLE_START_Y,
 					);
 					this.cmd(act.step);
-					this.unhighlight(14, 0);
+					this.unhighlight(14, 0, this.codeID);
 				}
 			}
 		}
-		this.unhighlight(5, 0);
-		this.highlight(15, 0);
+		this.unhighlight(5, 0, this.codeID);
+		this.highlight(18, 0, this.codeID);
 		this.cmd(act.step);
-		this.unhighlight(15, 0);
+		this.unhighlight(18, 0, this.codeID);
 
 		this.cmd(act.delete, iPointerID);
 		this.cmd(act.delete, jPointerID);

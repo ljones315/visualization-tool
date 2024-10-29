@@ -27,9 +27,11 @@
 import Algorithm, {
 	addControlToAlgorithmBar,
 	addDivisorToAlgorithmBar,
+	addDropDownGroupToAlgorithmBar,
 	addLabelToAlgorithmBar,
 } from './Algorithm.js';
 import { act } from '../anim/AnimationMain';
+import pseudocodeText from '../pseudocode.json';
 
 const INFO_MSG_X = 25;
 const INFO_MSG_Y = 15;
@@ -86,10 +88,24 @@ export default class BruteForce extends Algorithm {
 
 		addDivisorToAlgorithmBar();
 
-		// Random data button
-		this.randomButton = addControlToAlgorithmBar('Button', 'Random');
-		this.randomButton.onclick = this.randomCallback.bind(this);
-		this.controls.push(this.randomButton);
+		// Examples dropdown
+		this.exampleDropdown = addDropDownGroupToAlgorithmBar(
+			[
+				['', 'Select Example'],
+				['Random', 'Random'],
+				['aaaa in aaaaaaaaaaaaa', 'aaaa in aaaaaaaaaaaaa'],
+				['aaab in aaaaaaaaaaaaa', 'aaab in aaaaaaaaaaaaa'],
+				['baaa in aaaaaaaaaaaaa', 'baaa in aaaaaaaaaaaaa'],
+				['aaaa in aaabaaabaaaba', 'aaaa in aaabaaabaaaba'],
+				['aaab in aaabaaabaaaba', 'aaab in aaabaaabaaaba'],
+				['baaa in aaabaaabaaaba', 'baaa in aaabaaabaaaba'],
+				['abab in abacabacababa', 'abab in abacabacababa'],
+				['lack in sphinxofblackquartz', 'lack in sphinxofblackquartz'],
+			],
+			'Example',
+		);
+		this.exampleDropdown.onclick = this.exampleCallback.bind(this);
+		this.controls.push(this.exampleDropdown);
 
 		addDivisorToAlgorithmBar();
 
@@ -104,19 +120,6 @@ export default class BruteForce extends Algorithm {
 		this.textRowID = [];
 		this.rowCountID = [];
 		this.comparisonMatrixID = [];
-		this.codeID = [];
-
-		this.code = [
-			['procedure BruteForce(text, pattern)'],
-			['  n ← text.length, m ← pattern.length'],
-			['  for i ← 0, n - m'],
-			['    j ← 0'],
-			['    while j < m and pattern[j] = text[i + j]'],
-			['      j ← j + 1'],
-			['    if j = m'],
-			['      match found at i'],
-			['end procedure'],
-		];
 
 		this.infoLabelID = this.nextIndex++;
 		this.cmd(act.createLabel, this.infoLabelID, '', INFO_MSG_X, INFO_MSG_Y, 0, 0);
@@ -148,35 +151,49 @@ export default class BruteForce extends Algorithm {
 		this.implementAction(this.find.bind(this), text, pattern);
 	}
 
-	randomCallback() {
-		// The array indices correspond to each other
-		const textValues = [
-			'THISISATESTTEXT',
-			'ABABABABABABABABABABA',
-			'GGACTGA',
-			'BBBBAABBBAB',
-			'Machine Learning',
-			'Sphinxofblackquartz',
-			'BBBBBBBBBBBBBBBBBBBBA',
-			'AAAAABAAABA',
-			'AABCCAADDEE',
-		];
-		const patternValues = [
-			'TEST',
-			'ABABAB',
-			'ACT',
-			'BAB',
-			'in',
-			'quartz',
-			'BBBBBA',
-			'AAAA',
-			'FAA',
-		];
+	exampleCallback() {
+		const selection = this.exampleDropdown.value;
+		if (!selection) {
+			return;
+		}
 
-		const randomIndex = Math.floor(Math.random() * textValues.length);
+		let textValue;
+		let patternValue;
 
-		this.textField.value = textValues[randomIndex];
-		this.patternField.value = patternValues[randomIndex];
+		if (selection === 'Random') {
+			patternValue = this.generateRandomString(3, 'abc');
+			textValue = this.generateRandomString(15, 'abc', patternValue);
+		} else {
+			const values = selection.split(' in ');
+			textValue = values[1];
+			patternValue = values[0];
+		}
+
+		this.textField.value = textValue;
+		this.patternField.value = patternValue;
+		this.exampleDropdown.value = '';
+	}
+
+	// Create a random text or pattern string provided length, character set, and optionally force-include given string
+	generateRandomString(length, characters, mustInclude) {
+		let result = '';
+		if (mustInclude) {
+			const randomPosition = Math.floor(Math.random() * (length - mustInclude.length + 1));
+			for (let i = 0; i < length; i++) {
+				if (i >= randomPosition && i < randomPosition + mustInclude.length) {
+					result += mustInclude[i - randomPosition];
+				} else {
+					const randomIndex = Math.floor(Math.random() * characters.length);
+					result += characters[randomIndex];
+				}
+			}
+		} else {
+			for (let i = 0; i < length; i++) {
+				const randomIndex = Math.floor(Math.random() * characters.length);
+				result += characters[randomIndex];
+			}
+		}
+		return result;
 	}
 
 	clearCallback() {
@@ -210,6 +227,8 @@ export default class BruteForce extends Algorithm {
 		}
 
 		const labelsX = ARRAY_START_X + text.length * this.cellSize + 10;
+		this.pseudocode = pseudocodeText.BruteForce;
+		this.codeID = this.addCodeToCanvasBaseAll(this.pseudocode, 'find', labelsX, CODE_Y);
 		this.cmd(act.move, this.comparisonCountID, labelsX, COMP_COUNT_Y);
 
 		this.textRowID = new Array(text.length);
@@ -267,8 +286,6 @@ export default class BruteForce extends Algorithm {
 			}
 		}
 
-		this.codeID = this.addCodeToCanvasBase(this.code, labelsX, CODE_Y);
-
 		const iPointerID = this.nextIndex++;
 		const jPointerID = this.nextIndex++;
 		this.cmd(
@@ -291,7 +308,7 @@ export default class BruteForce extends Algorithm {
 		let i = 0;
 		let j = 0;
 		let row = 0;
-		this.highlight(2, 0);
+		this.highlight(2, 0, this.codeID);
 		this.cmd(act.step);
 		while (i <= text.length - pattern.length) {
 			for (let k = i; k < i + pattern.length; k++) {
@@ -303,10 +320,10 @@ export default class BruteForce extends Algorithm {
 					ypos,
 				);
 			}
-			this.highlight(3, 0);
+			this.highlight(3, 0, this.codeID);
 			this.cmd(act.step);
-			this.unhighlight(3, 0);
-			this.highlight(4, 0);
+			this.unhighlight(3, 0, this.codeID);
+			this.highlight(4, 0, this.codeID);
 			this.cmd(act.step);
 			while (j < pattern.length && pattern.charAt(j) === text.charAt(i + j)) {
 				this.cmd(
@@ -316,9 +333,9 @@ export default class BruteForce extends Algorithm {
 				);
 				this.cmd(act.setBackgroundColor, this.comparisonMatrixID[row][i + j], '#2ECC71');
 				j++;
-				this.highlight(5, 0);
+				this.highlight(5, 0, this.codeID);
 				this.cmd(act.step);
-				this.unhighlight(5, 0);
+				this.unhighlight(5, 0, this.codeID);
 				if (j !== pattern.length) {
 					const xpos = (i + j) * this.cellSize + ARRAY_START_X;
 					this.cmd(act.move, iPointerID, xpos, ARRAY_START_Y);
@@ -327,7 +344,7 @@ export default class BruteForce extends Algorithm {
 				}
 				this.cmd(act.step);
 			}
-			this.unhighlight(4, 0);
+			this.unhighlight(4, 0, this.codeID);
 			if (j < pattern.length) {
 				this.cmd(
 					act.setText,
@@ -335,15 +352,15 @@ export default class BruteForce extends Algorithm {
 					'Comparison Count: ' + ++this.compCount,
 				);
 			}
-			this.highlight(6, 0);
+			this.highlight(7, 0, this.codeID);
 			this.cmd(act.step);
-			this.unhighlight(6, 0);
+			this.unhighlight(7, 0, this.codeID);
 			if (j !== pattern.length) {
 				this.cmd(act.setBackgroundColor, this.comparisonMatrixID[row][i + j], '#E74C3C');
 			} else {
-				this.highlight(7, 0);
+				this.highlight(8, 0, this.codeID);
 				this.cmd(act.step);
-				this.unhighlight(7, 0);
+				this.unhighlight(8, 0, this.codeID);
 			}
 			i++;
 			j = 0;
@@ -356,7 +373,7 @@ export default class BruteForce extends Algorithm {
 				this.cmd(act.step);
 			}
 		}
-		this.unhighlight(2, 0);
+		this.unhighlight(2, 0, this.codeID);
 
 		this.cmd(act.delete, iPointerID);
 		this.cmd(act.delete, jPointerID);

@@ -27,10 +27,12 @@
 import Algorithm, {
 	addControlToAlgorithmBar,
 	addDivisorToAlgorithmBar,
+	addDropDownGroupToAlgorithmBar,
 	addGroupToAlgorithmBar,
 	addLabelToAlgorithmBar,
 } from './Algorithm.js';
 import { act } from '../anim/AnimationMain';
+import pseudocodeText from '../pseudocode.json';
 
 const MAX_ARRAY_SIZE = 15;
 
@@ -98,15 +100,22 @@ export default class HeapSort extends Algorithm {
 
 		addDivisorToAlgorithmBar();
 
-		const verticalGroup2 = addGroupToAlgorithmBar(false);
-
-		// Random data button
-		this.randomButton = addControlToAlgorithmBar('Button', 'Random', verticalGroup2);
-		this.randomButton.onclick = this.randomCallback.bind(this);
-		this.controls.push(this.randomButton);
+		// Examples dropdown
+		this.exampleDropdown = addDropDownGroupToAlgorithmBar(
+			[
+				['', 'Select Example'],
+				['0,2,4,7,3,6,11,10,9,8', 'Valid MinHeap'],
+				['11,10,6,9,8,0,4,7,2,3', 'Valid MaxHeap'],
+				['1,2,3,4,5,6,7,8,9', 'Sorted'],
+				['Random', 'Random'],
+			],
+			'Example',
+		);
+		this.exampleDropdown.onclick = this.exampleCallback.bind(this);
+		this.controls.push(this.exampleDropdown);
 
 		// Clear button
-		this.clearButton = addControlToAlgorithmBar('Button', 'Clear', verticalGroup2);
+		this.clearButton = addControlToAlgorithmBar('Button', 'Clear');
 		this.clearButton.onclick = this.clearCallback.bind(this);
 		this.controls.push(this.clearButton);
 	}
@@ -126,37 +135,15 @@ export default class HeapSort extends Algorithm {
 		this.infoLabelID = this.nextIndex++;
 		this.cmd(act.createLabel, this.infoLabelID, '', INFO_MSG_X, INFO_MSG_Y, 0);
 
-		this.code = [
-			['procedure heapSort(array)'],
-			['  heap ← create new PriorityQueue(array)'],
-			['  for i ← 0, array.length - 1, loop:'],
-			['    add ', 'heap.remove()', ' to data[i]'],
-			['  end for'],
-			['end procedure'],
-		];
+		this.pseudocode = pseudocodeText.HeapSort;
+		this.codeID = this.addCodeToCanvasBaseAll(
+			this.pseudocode,
+			'find',
+			CODE_START_X,
+			CODE_START_Y,
+		);
 
-		this.codeID = this.addCodeToCanvasBase(this.code, CODE_START_X, CODE_START_Y);
-
-		// this.codeID = Array(this.code.length);
-		// let i, j;
-		// for (i = 0; i < this.code.length; i++) {
-		// 	this.codeID[i] = new Array(this.code[i].length);
-		// 	for (j = 0; j < this.code[i].length; j++) {
-		// 		this.codeID[i][j] = this.nextIndex++;
-		// 		this.cmd(
-		// 			act.createLabel,
-		// 			this.codeID[i][j],
-		// 			this.code[i][j],
-		// 			CODE_START_X,
-		// 			CODE_START_Y + i * CODE_LINE_HEIGHT,
-		// 			0,
-		// 		);
-		// 		this.cmd(act.setForegroundColor, this.codeID[i][j], CODE_STANDARD_COLOR);
-		// 		if (j > 0) {
-		// 			this.cmd(act.alignRight, this.codeID[i][j], this.codeID[i][j - 1]);
-		// 		}
-		// 	}
-		// }
+		this.resetIndex = this.nextIndex;
 
 		this.animationManager.startNewAnimation(this.commands);
 		this.animationManager.skipForward();
@@ -189,7 +176,7 @@ export default class HeapSort extends Algorithm {
 			return this.commands;
 		}
 
-		this.highlight(0, 0);
+		this.highlight(0, 0, this.codeID);
 
 		this.arrayData = list
 			.map(Number)
@@ -232,10 +219,10 @@ export default class HeapSort extends Algorithm {
 		}
 		this.arrayData = displayDataTemp;
 		this.cmd(act.step);
-		this.unhighlight(0, 0);
+		this.unhighlight(0, 0, this.codeID);
 
 		//Create a new heap
-		this.highlight(1, 0);
+		this.highlight(1, 0, this.codeID);
 		this.createHeap(this.arrayData);
 		this.cmd(act.step);
 
@@ -248,18 +235,20 @@ export default class HeapSort extends Algorithm {
 		}
 		this.cmd(act.step);
 
-		this.unhighlight(1, 0);
+		this.unhighlight(1, 0, this.codeID);
 		this.cmd(act.setText, this.infoLabelID, '');
 
 		//Remove all of the elements from the heap
+		this.highlight(2, 0, this.codeID);
 		while (this.currentHeapSize > 0) {
-			this.highlight(2, 0);
-			this.cmd(act.step);
-			this.unhighlight(2, 0);
+			this.highlight(3, 0, this.codeID);
 			this.remove();
+			this.unhighlight(3, 0, this.codeID);
+			this.cmd(act.step);
 		}
+		this.unhighlight(2, 0, this.codeID);
 
-		this.highlight(4, 0);
+		this.highlight(4, 0, this.codeID);
 		this.cmd(act.setText, this.infoLabelID, '');
 		this.cmd(act.step);
 
@@ -267,29 +256,39 @@ export default class HeapSort extends Algorithm {
 			this.cmd(act.delete, this.heapArrayID[i]);
 			this.cmd(act.delete, this.heapArrayLabelID[i]);
 		}
-		this.unhighlight(4, 0);
-		this.highlight(5, 0);
+		this.unhighlight(4, 0, this.codeID);
+		this.highlight(5, 0, this.codeID);
 		this.cmd(act.step);
 
-		this.unhighlight(5, 0);
+		this.unhighlight(5, 0, this.codeID);
 
 		return this.commands;
 	}
 
-	randomCallback() {
-		//Generate between 5 and 15 random values
-		const RANDOM_ARRAY_SIZE = Math.floor(Math.random() * 9) + 5;
-		const MIN_DATA_VALUE = 1;
-		const MAX_DATA_VALUE = 14;
-		let values = '';
-		for (let i = 0; i < RANDOM_ARRAY_SIZE; i++) {
-			values += (
-				Math.floor(Math.random() * (MAX_DATA_VALUE - MIN_DATA_VALUE)) + MIN_DATA_VALUE
-			).toString();
-			if (i < RANDOM_ARRAY_SIZE - 1) {
-				values += ',';
-			}
+	exampleCallback() {
+		const selection = this.exampleDropdown.value;
+		if (!selection) {
+			return;
 		}
+
+		let values = '';
+		if (selection === 'Random') {
+			//Generate between 5 and 15 random values
+			const RANDOM_ARRAY_SIZE = Math.floor(Math.random() * 9) + 5;
+			const MIN_DATA_VALUE = 1;
+			const MAX_DATA_VALUE = 14;
+			for (let i = 0; i < RANDOM_ARRAY_SIZE; i++) {
+				values += (
+					Math.floor(Math.random() * (MAX_DATA_VALUE - MIN_DATA_VALUE)) + MIN_DATA_VALUE
+				).toString();
+				if (i < RANDOM_ARRAY_SIZE - 1) {
+					values += ',';
+				}
+			}
+		} else {
+			values = selection;
+		}
+		this.exampleDropdown.value = '';
 		this.listField.value = values;
 	}
 
@@ -551,6 +550,13 @@ export default class HeapSort extends Algorithm {
 	}
 
 	reset() {
+		this.nextIndex = this.resetIndex;
+		this.arrayData = [];
+		this.arrayID = [];
+		this.heapArrayData = [];
+		this.heapArrayID = [];
+		this.heapArrayLabelID = [];
+		this.heapTreeObj = [];
 		this.currentHeapSize = 0;
 	}
 

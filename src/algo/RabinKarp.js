@@ -27,9 +27,11 @@
 import Algorithm, {
 	addControlToAlgorithmBar,
 	addDivisorToAlgorithmBar,
+	addDropDownGroupToAlgorithmBar,
 	addLabelToAlgorithmBar,
 } from './Algorithm.js';
 import { act } from '../anim/AnimationMain';
+import pseudocodeText from '../pseudocode.json';
 
 const INFO_MSG_X = 25;
 const INFO_MSG_Y = 15;
@@ -109,10 +111,24 @@ export default class RabinKarp extends Algorithm {
 
 		addDivisorToAlgorithmBar();
 
-		// Random data button
-		this.randomButton = addControlToAlgorithmBar('Button', 'Random');
-		this.randomButton.onclick = this.randomCallback.bind(this);
-		this.controls.push(this.randomButton);
+		// Examples dropdown
+		this.exampleDropdown = addDropDownGroupToAlgorithmBar(
+			[
+				['', 'Select Example'],
+				['Random', 'Random'],
+				['aaaa in aaaaaaaaaaaaa', 'aaaa in aaaaaaaaaaaaa'],
+				['aaab in aaaaaaaaaaaaa', 'aaab in aaaaaaaaaaaaa'],
+				['baaa in aaaaaaaaaaaaa', 'baaa in aaaaaaaaaaaaa'],
+				['aaaa in aaabaaabaaaba', 'aaaa in aaabaaabaaaba'],
+				['aaab in aaabaaabaaaba', 'aaab in aaabaaabaaaba'],
+				['baaa in aaabaaabaaaba', 'baaa in aaabaaabaaaba'],
+				['abab in abacabacababa', 'abab in abacabacababa'],
+				['lack in sphinxofblackquartz', 'lack in sphinxofblackquartz'],
+			],
+			'Example',
+		);
+		this.exampleDropdown.onclick = this.exampleCallback.bind(this);
+		this.controls.push(this.exampleDropdown);
 
 		addDivisorToAlgorithmBar();
 
@@ -144,25 +160,7 @@ export default class RabinKarp extends Algorithm {
 		this.infoLabelID = this.nextIndex++;
 		this.cmd(act.createLabel, this.infoLabelID, '', INFO_MSG_X, INFO_MSG_Y, 0);
 
-		this.code = [
-			['procedure RabinKarp(text, pattern)'],
-			['  m ← length of pattern, n ← length of text'],
-			['  patternHash ← rolling hash of pattern'],
-			['  textHash ← rolling hash of first m characters of text'],
-			['  i ← 0'],
-			['  while i <= n - m'],
-			['    if patternHash = textHash'],
-			['      j ← 0'],
-			['      while j < m and text[i + j] = pattern[j]'],
-			['        j ← j + 1'],
-			['      if j = m'],
-			['        match found at i'],
-			['    i ← i + 1'],
-			['    if i <= n - m'],
-			['      textHash ← rolled hash of text, from i to i + m'],
-			['end procedure'],
-		];
-		this.codeID = [];
+		this.pseudocode = pseudocodeText.RabinKarp;
 
 		this.animationManager.startNewAnimation(this.commands);
 		this.animationManager.skipForward();
@@ -198,35 +196,49 @@ export default class RabinKarp extends Algorithm {
 		this.implementAction(this.changeBase.bind(this), val);
 	}
 
-	randomCallback() {
-		// The array indices correspond to each other
-		const textValues = [
-			'THISISATESTTEXT',
-			'ABABABABABABABABABABA',
-			'GGACTGA',
-			'BBBBAABBBAB',
-			'Machine Learning',
-			'Sphinxofblackquartz',
-			'BBBBBBBBBBBBBBBBBBBBA',
-			'AAAAABAAABA',
-			'AABCCAADDEE',
-		];
-		const patternValues = [
-			'TEST',
-			'ABABAB',
-			'ACT',
-			'BAB',
-			'in',
-			'quartz',
-			'BBBBBA',
-			'AAAA',
-			'FAA',
-		];
+	exampleCallback() {
+		const selection = this.exampleDropdown.value;
+		if (!selection) {
+			return;
+		}
 
-		const randomIndex = Math.floor(Math.random() * textValues.length);
+		let textValue;
+		let patternValue;
 
-		this.textField.value = textValues[randomIndex];
-		this.patternField.value = patternValues[randomIndex];
+		if (selection === 'Random') {
+			patternValue = this.generateRandomString(3, 'abc');
+			textValue = this.generateRandomString(15, 'abc', patternValue);
+		} else {
+			const values = selection.split(' in ');
+			textValue = values[1];
+			patternValue = values[0];
+		}
+
+		this.textField.value = textValue;
+		this.patternField.value = patternValue;
+		this.exampleDropdown.value = '';
+	}
+
+	// Create a random text or pattern string provided length, character set, and optionally force-include given string
+	generateRandomString(length, characters, mustInclude) {
+		let result = '';
+		if (mustInclude) {
+			const randomPosition = Math.floor(Math.random() * (length - mustInclude.length + 1));
+			for (let i = 0; i < length; i++) {
+				if (i >= randomPosition && i < randomPosition + mustInclude.length) {
+					result += mustInclude[i - randomPosition];
+				} else {
+					const randomIndex = Math.floor(Math.random() * characters.length);
+					result += characters[randomIndex];
+				}
+			}
+		} else {
+			for (let i = 0; i < length; i++) {
+				const randomIndex = Math.floor(Math.random() * characters.length);
+				result += characters[randomIndex];
+			}
+		}
+		return result;
 	}
 
 	changeBase(val) {
@@ -368,7 +380,7 @@ export default class RabinKarp extends Algorithm {
 		this.cmd(act.move, this.comparisonCountID, labelsX, COMP_COUNT_Y);
 		this.cmd(act.setText, this.comparisonCountID, 'Comparison Count: ' + this.compCount);
 
-		this.codeID = this.addCodeToCanvasBase(this.code, labelsX, CODE_Y);
+		this.codeID = this.addCodeToCanvasBaseAll(this.pseudocode, 'find', labelsX, CODE_Y);
 
 		let textCalculation = '';
 		let textHash = 0;
@@ -408,14 +420,19 @@ export default class RabinKarp extends Algorithm {
 		const iPointerID = this.nextIndex++;
 		const jPointerID = this.nextIndex++;
 
-		this.highlight(2, 0);
+		this.highlight(1, 0, this.codeID);
 		this.cmd(act.step);
-		this.unhighlight(2, 0);
-		this.highlight(3, 0);
+		this.unhighlight(1, 0, this.codeID);
+		this.highlight(2, 0, this.codeID);
+		this.highlight(3, 0, this.codeID);
 		this.cmd(act.step);
-		this.unhighlight(3, 0);
+		this.unhighlight(2, 0, this.codeID);
+		this.unhighlight(3, 0, this.codeID);
+		this.highlight(4, 0, this.codeID);
+		this.cmd(act.step);
+		this.unhighlight(4, 0, this.codeID);
 
-		this.highlight(5, 0);
+		this.highlight(5, 0, this.codeID);
 		let row = 0;
 		for (let i = 0; i <= text.length - pattern.length; i++) {
 			for (let k = i; k < i + pattern.length; k++) {
@@ -428,11 +445,11 @@ export default class RabinKarp extends Algorithm {
 				);
 			}
 			this.cmd(act.step);
-			this.highlight(6, 0);
+			this.highlight(6, 0, this.codeID);
 			this.cmd(act.step);
 			if (patternHash === textHash) {
-				this.unhighlight(6, 0);
-				this.highlight(7, 0);
+				this.unhighlight(6, 0, this.codeID);
+				this.highlight(7, 0, this.codeID);
 				xpos = i * this.cellSize + ARRAY_START_X;
 				this.cmd(
 					act.createHighlightCircle,
@@ -452,8 +469,8 @@ export default class RabinKarp extends Algorithm {
 					this.cellSize / 2,
 				);
 				this.cmd(act.step);
-				this.unhighlight(7, 0);
-				this.highlight(8, 0);
+				this.unhighlight(7, 0, this.codeID);
+				this.highlight(8, 0, this.codeID);
 				this.cmd(act.step);
 				let j = 0;
 				while (j < pattern.length && pattern.charAt(j) === text.charAt(i + j)) {
@@ -468,7 +485,7 @@ export default class RabinKarp extends Algorithm {
 						'#2ECC71',
 					);
 					j++;
-					this.highlight(9, 0);
+					this.highlight(9, 0, this.codeID);
 					if (j !== pattern.length) {
 						xpos = (i + j) * this.cellSize + ARRAY_START_X;
 						this.cmd(act.move, iPointerID, xpos, ARRAY_START_Y);
@@ -476,12 +493,12 @@ export default class RabinKarp extends Algorithm {
 						this.cmd(act.move, jPointerID, xpos, ypos);
 					}
 					this.cmd(act.step);
-					this.unhighlight(9, 0);
+					this.unhighlight(9, 0, this.codeID);
 				}
-				this.unhighlight(8, 0);
-				this.highlight(10, 0);
+				this.unhighlight(8, 0, this.codeID);
+				this.highlight(11, 0, this.codeID);
 				this.cmd(act.step);
-				this.unhighlight(10, 0);
+				this.unhighlight(11, 0, this.codeID);
 				if (j !== pattern.length) {
 					this.cmd(
 						act.setText,
@@ -494,9 +511,9 @@ export default class RabinKarp extends Algorithm {
 						'#E74C3C',
 					);
 				} else {
-					this.highlight(11, 0);
+					this.highlight(12, 0, this.codeID);
 					this.cmd(act.step);
-					this.unhighlight(11, 0);
+					this.unhighlight(12, 0, this.codeID);
 				}
 				this.cmd(act.delete, iPointerID);
 				this.cmd(act.delete, jPointerID);
@@ -505,17 +522,14 @@ export default class RabinKarp extends Algorithm {
 				for (let k = i; k < i + pattern.length; k++) {
 					this.cmd(act.setBackgroundColor, this.comparisonMatrixID[row][k], '#FFFF4D');
 				}
-				this.unhighlight(6, 0);
 				this.cmd(act.step);
+				this.unhighlight(6, 0, this.codeID);
 			}
-			this.highlight(12, 0);
+			this.highlight(15, 0, this.codeID);
 			this.cmd(act.step);
-			this.unhighlight(12, 0);
-			this.highlight(13, 0);
-			this.cmd(act.step);
-			this.unhighlight(13, 0);
 			if (i < text.length - pattern.length) {
-				this.highlight(14, 0);
+				this.unhighlight(15, 0, this.codeID);
+				this.highlight(16, 0, this.codeID);
 				textHash =
 					this.baseValue * (textHash - base * (text.charCodeAt(i) - 97)) +
 					(text.charCodeAt(i + pattern.length) - 97);
@@ -529,11 +543,15 @@ export default class RabinKarp extends Algorithm {
 					textCalculation.substring(0, textCalculation.length - 2) + ' = ' + textHash;
 				this.cmd(act.setText, this.textHashCalculationID, textCalculation);
 				this.cmd(act.step);
-				this.unhighlight(14, 0);
+				this.unhighlight(16, 0, this.codeID);
 			}
+			this.unhighlight(15, 0, this.codeID);
+			this.highlight(18, 0, this.codeID);
+			this.cmd(act.step);
+			this.unhighlight(18, 0, this.codeID);
 			row++;
 		}
-		this.unhighlight(5, 0);
+		this.unhighlight(5, 0, this.codeID);
 
 		return this.commands;
 	}
